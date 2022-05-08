@@ -55,6 +55,7 @@ public abstract class AbstractCSharpCodegen extends DefaultCodegen implements Co
     protected boolean returnICollection = false;
     protected boolean netCoreProjectFileFlag = false;
     protected boolean nullReferenceTypesFlag = false;
+    protected boolean extractPackagesFromModelName = false;
 
     protected String modelPropertyNaming = CodegenConstants.MODEL_PROPERTY_NAMING_TYPE.PascalCase.name();
 
@@ -69,6 +70,8 @@ public abstract class AbstractCSharpCodegen extends DefaultCodegen implements Co
     protected String packageCompany = "OpenAPI";
     protected String packageCopyright = "No Copyright";
     protected String packageAuthors = "OpenAPI";
+
+    protected String strippedModelNamePrefix = "";
 
     protected String interfacePrefix = "I";
     protected String enumNameSuffix = "Enum";
@@ -414,6 +417,16 @@ public abstract class AbstractCSharpCodegen extends DefaultCodegen implements Co
                 writer.write(content);
             }
         });
+
+        if (additionalProperties().containsKey(CodegenConstants.EXTRACT_PACKAGES_FROM_MODEL_NAMES)) {
+            setExtractPackagesFromModelName(convertPropertyToBooleanAndWriteBack(CodegenConstants.EXTRACT_PACKAGES_FROM_MODEL_NAMES));
+        }
+
+        if (additionalProperties().containsKey(CodegenConstants.STRIPPED_MODEL_NAME_PREFIX)) {
+            setStrippedModelNamePrefix(additionalProperties().get(CodegenConstants.STRIPPED_MODEL_NAME_PREFIX).toString());
+        }
+
+
     }
 
     @Override
@@ -1069,6 +1082,12 @@ public abstract class AbstractCSharpCodegen extends DefaultCodegen implements Co
     }
 
     @Override
+    public String toClassName(final String name)
+    {
+        return super.toClassName(name);
+    }
+
+    @Override
     public String toModelName(String name) {
         // We need to check if import-mapping has a different model for this class, so we use it
         // instead of the auto-generated one.
@@ -1090,7 +1109,20 @@ public abstract class AbstractCSharpCodegen extends DefaultCodegen implements Co
             name = name + "_" + modelNameSuffix;
         }
 
-        name = camelize(sanitizeName(name));
+        //We can not really sanitize the dots away here when we want to extract them. So we sanitize the sections.
+        if (!isExtractPackagesFromModelName()) {
+            final String[] components = name.split("\\.");
+            final String[] sanitizedComponents = new String[components.length];
+            for (int i = 0; i < components.length; i++) {
+                sanitizedComponents[i] = sanitizeName(components[i]);
+            }
+            name = String.join(".", sanitizedComponents);
+        }
+        else {
+            name = sanitizeName(name);
+        }
+
+        name = camelize(name);
 
         // model name cannot use reserved keyword, e.g. return
         if (isReservedWord(name)) {
@@ -1462,4 +1494,34 @@ public abstract class AbstractCSharpCodegen extends DefaultCodegen implements Co
 
     @Override
     public GeneratorLanguage generatorLanguage() { return GeneratorLanguage.C_SHARP; }
+
+    public boolean isExtractPackagesFromModelName()
+    {
+        return extractPackagesFromModelName;
+    }
+
+    public void setExtractPackagesFromModelName(final boolean extractPackagesFromModelName)
+    {
+        this.extractPackagesFromModelName = extractPackagesFromModelName;
+    }
+
+    public String getStrippedModelNamePrefix()
+    {
+        return strippedModelNamePrefix;
+    }
+
+    public void setStrippedModelNamePrefix(final String strippedModelNamePrefix)
+    {
+        this.strippedModelNamePrefix = strippedModelNamePrefix;
+    }
+
+    @Override
+    public String toModelImport(String name)
+    {
+        if (name.startsWith(this.strippedModelNamePrefix)) {
+            name = name.substring(this.strippedModelNamePrefix.length());
+        }
+
+        return super.toModelImport(name);
+    }
 }

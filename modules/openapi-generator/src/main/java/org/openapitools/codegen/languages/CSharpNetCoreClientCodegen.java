@@ -329,6 +329,20 @@ public class CSharpNetCoreClientCodegen extends AbstractCSharpCodegen {
         libraryOption.setDefault(RESTSHARP);
         cliOptions.add(libraryOption);
         setLibrary(RESTSHARP);
+
+        // If the external system supports the sub namespacing, we can use it
+        addSwitch(
+          CodegenConstants.EXTRACT_PACKAGES_FROM_MODEL_NAMES,
+          CodegenConstants.EXTRACT_PACKAGES_FROM_MODEL_NAMES_DESC,
+          this.extractPackagesFromModelName
+        );
+
+        // Support stripping of the prefix from the model name.
+        addOption(
+          CodegenConstants.STRIPPED_MODEL_NAME_PREFIX,
+          CodegenConstants.STRIPPED_MODEL_NAME_PREFIX_DESC,
+          this.strippedModelNamePrefix
+        );
     }
 
     @Override

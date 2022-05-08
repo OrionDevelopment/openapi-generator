@@ -2384,6 +2384,18 @@ public class DefaultCodegen implements CodegenConfig {
     }
 
     /**
+     * Converts the OpenAPI schema name to a class name suitable for the current code generator.
+     * May be overridden for each programming language.
+     * In case the name belongs to the TypeSystem it won't be renamed.
+     *
+     * @param name the name of the model
+     * @return the class name of the model.
+     */
+    public String toClassName(final String name) {
+        return toModelName(name);
+    }
+
+    /**
      * Converts the OpenAPI schema name to a model name suitable for the current code generator.
      * May be overridden for each programming language.
      * In case the name belongs to the TypeSystem it won't be renamed.
@@ -2689,7 +2701,7 @@ public class DefaultCodegen implements CodegenConfig {
         m.title = escapeText(schema.getTitle());
         m.description = escapeText(schema.getDescription());
         m.unescapedDescription = schema.getDescription();
-        m.classname = toModelName(name);
+        m.classname = toClassName(name);
         m.classVarName = toVarName(name);
         m.classFilename = toModelFilename(name);
         m.modelJson = Json.pretty(schema);

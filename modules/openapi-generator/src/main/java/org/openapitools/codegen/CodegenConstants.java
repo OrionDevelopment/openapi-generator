@@ -398,4 +398,10 @@ public class CodegenConstants {
     public static final String USE_ONEOF_DISCRIMINATOR_LOOKUP_DESC = "Use the discriminator's mapping in oneOf to speed up the model lookup. IMPORTANT: Validation (e.g. one and only one match in oneOf's schemas) will be skipped.";
     public static final String INIT_REQUIRED_VARS = "initRequiredVars";
     public static final String INIT_REQUIRED_VARS_DESC = "If set to true then the required variables are included as positional arguments in __init__ and _from_openapi_data methods. Note: this can break some composition use cases. To learn more read PR #8802.";
+
+    public static final String EXTRACT_PACKAGES_FROM_MODEL_NAMES = "extractPackagesFromModelNames";
+    public static final String EXTRACT_PACKAGES_FROM_MODEL_NAMES_DESC = "Extract packages from model names.";
+
+    public static final String STRIPPED_MODEL_NAME_PREFIX = "strippedModelNamePrefix";
+    public static final String STRIPPED_MODEL_NAME_PREFIX_DESC = "Prefix to strip from model names.";
 }
