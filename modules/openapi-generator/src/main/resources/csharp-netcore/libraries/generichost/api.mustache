@@ -16,6 +16,9 @@ using {{packageName}}.Client;
 {{#hasImport}}
 using {{packageName}}.{{modelPackage}};
 {{/hasImport}}
+{{#imports}}
+using {{packageName}}.{{import}};
+{{/imports}}
 
 namespace {{packageName}}.{{apiPackage}}
 {

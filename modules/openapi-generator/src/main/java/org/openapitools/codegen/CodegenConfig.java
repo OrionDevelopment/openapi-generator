@@ -79,6 +79,9 @@ public interface CodegenConfig {
 
     String modelDocFileFolder();
 
+
+    String modelPackage(String name);
+
     String modelPackage();
 
     String toApiName(String name);
@@ -180,6 +183,9 @@ public interface CodegenConfig {
     String toApiDocFilename(String name);
 
     String toModelDocFilename(String name);
+
+
+    String toModelImport(String className, String modelName);
 
     String toModelImport(String name);
 

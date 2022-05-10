@@ -455,7 +455,7 @@ public class DefaultGenerator implements Generator {
 
                 Schema schema = schemas.get(name);
 
-                if (ModelUtils.isFreeFormObject(this.openAPI, schema)) { // check to see if it's a free-form object
+                if (ModelUtils.isFreeFormObject(this.openAPI, schema) && !isPartOfInheritanceTree(schemas, name)) { // check to see if it's a free-form object
                     // there are 3 free form use cases
                     // 1. free form with no validation that is not allOf included in any composed schemas
                     // 2. free form with validation
@@ -506,7 +506,7 @@ public class DefaultGenerator implements Generator {
         // generate files based on processed models
         for (String modelName : allProcessedModels.keySet()) {
             ModelsMap models = allProcessedModels.get(modelName);
-            models.put("modelPackage", config.modelPackage());
+            models.put("modelPackage", config.modelPackage(modelName));
             try {
                 // TODO revise below as we've already performed unaliasing so that the isAlias check may be removed
                 List<ModelMap> modelList = models.getModels();
@@ -541,6 +541,15 @@ public class DefaultGenerator implements Generator {
             Json.prettyPrint(allModels);
         }
 
+    }
+
+    private boolean isPartOfInheritanceTree(Map<String, Schema> schemas, final String modelName) {
+        return schemas.values().stream()
+                .filter(io.swagger.v3.oas.models.media.ComposedSchema.class::isInstance)
+                .map(io.swagger.v3.oas.models.media.ComposedSchema.class::cast)
+                .filter(schema -> schema.getAllOf() != null)
+                .flatMap(schema -> schema.getAllOf().stream())
+                .anyMatch(schema -> schema.get$ref().equals("#/components/schemas/" + modelName));
     }
 
     @SuppressWarnings("unchecked")
@@ -792,6 +801,16 @@ public class DefaultGenerator implements Generator {
             CodegenModel m = allModels.get(i).getModel();
             m.hasMoreModels = true;
         }
+
+        final Set<String> importSchemaNames = new HashSet<>();
+        for (ModelMap allModel : allModels) {
+            importSchemaNames.add(allModel.getModel().name);
+        }
+        final Map<String, String> importMappings = getAllImportsMappings(importSchemaNames);
+        final Set<Map<String, String>> importsObject = toImportsObjects(importMappings);
+
+        bundle.put("hasImports", !importsObject.isEmpty());
+        bundle.put("imports", importsObject);
 
         config.postProcessSupportingFileData(bundle);
 
@@ -1269,7 +1288,7 @@ public class DefaultGenerator implements Generator {
             CodegenModel cm = config.fromModel(key, schema);
             ModelMap mo = new ModelMap();
             mo.setModel(cm);
-            mo.put("importPath", config.toModelImport(cm.classname));
+            mo.put("importPath", config.toModelImport(cm.classname, cm.name));
             modelMaps.add(mo);
 
             cm.removeSelfReferenceImport();

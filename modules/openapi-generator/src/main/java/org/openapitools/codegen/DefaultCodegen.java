@@ -447,7 +447,7 @@ public class DefaultCodegen implements CodegenConfig {
                 List<Map<String, String>> importsValue = new ArrayList<>();
                 ModelsMap objsValue = new ModelsMap();
                 objsValue.setModels(Collections.singletonList(modelMapValue));
-                objsValue.put("package", modelPackage());
+                objsValue.put("package", modelPackage(cm.name));
                 objsValue.setImports(importsValue);
                 objsValue.put("classname", cm.classname);
                 objsValue.putAll(additionalProperties);
@@ -1068,6 +1068,11 @@ public class DefaultCodegen implements CodegenConfig {
     }
 
     @Override
+    public String modelPackage(String name) {
+        return modelPackage();
+    }
+
+    @Override
     public String modelPackage() {
         return modelPackage;
     }
@@ -1526,15 +1531,26 @@ public class DefaultCodegen implements CodegenConfig {
     /**
      * Return the fully-qualified "Model" name for import
      *
+     * @param className the name of the "Model"
+     * @return the fully-qualified "Model" name for import
+     */
+    @Override
+    public String toModelImport(String className, String modelName) {
+        return toModelImport(className);
+    }
+
+    /**
+     * Return the fully-qualified "Model" name for import
+     *
      * @param name the name of the "Model"
      * @return the fully-qualified "Model" name for import
      */
     @Override
     public String toModelImport(String name) {
-        if ("".equals(modelPackage())) {
+        if ("".equals(modelPackage(name))) {
             return name;
         } else {
-            return modelPackage() + "." + name;
+            return modelPackage(name) + "." + toClassName(name);
         }
     }
 
@@ -4035,11 +4051,11 @@ public class DefaultCodegen implements CodegenConfig {
                 if (r.baseType != null &&
                         !defaultIncludes.contains(r.baseType) &&
                         !languageSpecificPrimitives.contains(r.baseType)) {
-                    imports.add(r.baseType);
+                    addImport(imports, r.baseType);
                 }
                 if ("set".equals(r.containerType) && typeMapping.containsKey(r.containerType)) {
                     op.uniqueItems = true;
-                    imports.add(typeMapping.get(r.containerType));
+                    addImport(imports, typeMapping.get(r.containerType));
                 }
 
                 op.responses.add(r);
@@ -5167,21 +5183,21 @@ public class DefaultCodegen implements CodegenConfig {
         addImports(importsToBeAddedTo, type.getImports(true));
     }
 
-    protected void addImports(Set<String> importsToBeAddedTo, Set<String> importsToAdd) {
-        importsToAdd.stream().forEach(i -> addImport(importsToBeAddedTo, i));
+    protected void addImports(Set<String> importsToBeAddedTo, Collection<String> importsToAdd) {
+        importsToAdd.forEach(i -> addImport(importsToBeAddedTo, i));
     }
 
     protected void addImport(CodegenModel m, String type) {
         addImport(m.imports, type);
     }
 
-    private void addImport(Set<String> importsToBeAddedTo, String type) {
+    protected void addImport(Set<String> importsToBeAddedTo, String type) {
         if (shouldAddImport(type)) {
             importsToBeAddedTo.add(type);
         }
     }
 
-    private boolean shouldAddImport(String type) {
+    protected boolean shouldAddImport(String type) {
         return type != null && needToImport(type);
     }
 
@@ -6482,13 +6498,13 @@ public class DefaultCodegen implements CodegenConfig {
             codegenParameter.dataType = getTypeDeclaration(codegenModel.classname);
             codegenParameter.description = codegenModel.description;
             codegenParameter.isNullable = codegenModel.isNullable;
-            imports.add(codegenParameter.baseType);
+            addImport(imports, codegenModel.name);
         } else {
             CodegenProperty codegenProperty = fromProperty("property", schema);
 
             if (codegenProperty != null && codegenProperty.getComplexType() != null && codegenProperty.getComplexType().contains(" | ")) {
                 List<String> parts = Arrays.asList(codegenProperty.getComplexType().split(" \\| "));
-                imports.addAll(parts);
+                addImports(imports, parts);
                 String codegenModelName = codegenProperty.getComplexType();
                 codegenParameter.baseName = codegenModelName;
                 codegenParameter.paramName = toParamName(codegenParameter.baseName);
@@ -6526,10 +6542,10 @@ public class DefaultCodegen implements CodegenConfig {
                     codegenParameter.baseType = codegenModelName;
                     codegenParameter.dataType = getTypeDeclaration(codegenModelName);
                     codegenParameter.description = codegenModelDescription;
-                    imports.add(codegenParameter.baseType);
+                    addImport(imports, codegenParameter.baseType);
 
                     if (codegenProperty.complexType != null) {
-                        imports.add(codegenProperty.complexType);
+                        addImport(imports, codegenProperty.complexType);
                     }
                 }
             }

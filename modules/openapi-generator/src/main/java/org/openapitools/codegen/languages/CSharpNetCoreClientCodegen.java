@@ -343,6 +343,13 @@ public class CSharpNetCoreClientCodegen extends AbstractCSharpCodegen {
           CodegenConstants.STRIPPED_MODEL_NAME_PREFIX_DESC,
           this.strippedModelNamePrefix
         );
+
+        // If the external system wants the root packages to be prefixed to imports.
+        addSwitch(
+                CodegenConstants.EXTRACT_PACKAGES_FROM_MODEL_NAMES,
+                CodegenConstants.EXTRACT_PACKAGES_FROM_MODEL_NAMES_DESC,
+                this.shouldPrefixPackageToImports
+        );
     }
 
     @Override
@@ -364,7 +371,7 @@ public class CSharpNetCoreClientCodegen extends AbstractCSharpCodegen {
         Map<String, Schema> allDefinitions = ModelUtils.getSchemas(this.openAPI);
         CodegenModel codegenModel = super.fromModel(name, model);
         if (allDefinitions != null && codegenModel != null && codegenModel.parent != null) {
-            final Schema parentModel = allDefinitions.get(toModelName(codegenModel.parent));
+            final Schema parentModel = allDefinitions.get(codegenModel.parentSchema);
             if (parentModel != null) {
                 final CodegenModel parentCodegenModel = super.fromModel(codegenModel.parent, parentModel);
                 if (codegenModel.hasEnums) {
@@ -668,6 +675,16 @@ public class CSharpNetCoreClientCodegen extends AbstractCSharpCodegen {
             additionalProperties.put(CodegenConstants.API_NAME, apiName);
         }
 
+        if (!additionalProperties.containsKey(CodegenConstants.API_PACKAGE)) {
+            apiPackage = packageName + ".Api";
+            additionalProperties.put(CodegenConstants.API_PACKAGE, apiPackage);
+        }
+
+        if (!additionalProperties.containsKey(CodegenConstants.MODEL_PACKAGE)) {
+            modelPackage = packageName + ".Models";
+            additionalProperties.put(CodegenConstants.MODEL_PACKAGE, modelPackage);
+        }
+
         if (isEmpty(apiPackage)) {
             setApiPackage("Api");
         }
@@ -771,8 +788,8 @@ public class CSharpNetCoreClientCodegen extends AbstractCSharpCodegen {
 
         final String testPackageName = testPackageName();
         String packageFolder = sourceFolder + File.separator + packageName;
-        String clientPackageDir = packageFolder + File.separator + clientPackage;
-        String modelPackageDir = packageFolder + File.separator + modelPackage;
+        String clientPackageDir = packageFolder + File.separator + clientPackage.replace(".", File.separator);
+        String modelPackageDir = packageFolder + File.separator + modelPackage.replace(".", File.separator);
         String testPackageFolder = testFolder + File.separator + testPackageName;
 
         additionalProperties.put("testPackageName", testPackageName);
@@ -1466,6 +1483,8 @@ public class CSharpNetCoreClientCodegen extends AbstractCSharpCodegen {
 
             EnsureInheritedPropertiesArePresent(cm);
         }
+
+        sortVarsBasedOnRequirement(objs);
 
         return objs;
     }

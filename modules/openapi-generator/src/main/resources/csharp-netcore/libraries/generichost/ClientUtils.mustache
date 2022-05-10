@@ -15,8 +15,10 @@ using Microsoft.Extensions.DependencyInjection;{{#supportsRetry}}
 using Polly.Timeout;
 using Polly.Extensions.Http;
 using Polly;{{/supportsRetry}}
-using {{packageName}}.Api;{{#useCompareNetObjects}}
-using KellermanSoftware.CompareNetObjects;{{/useCompareNetObjects}}
+using {{packageName}}.{{apiPackage}};
+{{#useCompareNetObjects}}
+using KellermanSoftware.CompareNetObjects;
+{{/useCompareNetObjects}}
 
 namespace {{packageName}}.Client
 {

@@ -56,6 +56,7 @@ public abstract class AbstractCSharpCodegen extends DefaultCodegen implements Co
     protected boolean netCoreProjectFileFlag = false;
     protected boolean nullReferenceTypesFlag = false;
     protected boolean extractPackagesFromModelName = false;
+    protected boolean shouldPrefixPackageToImports = false;
 
     protected String modelPropertyNaming = CodegenConstants.MODEL_PROPERTY_NAMING_TYPE.PascalCase.name();
 
@@ -426,7 +427,9 @@ public abstract class AbstractCSharpCodegen extends DefaultCodegen implements Co
             setStrippedModelNamePrefix(additionalProperties().get(CodegenConstants.STRIPPED_MODEL_NAME_PREFIX).toString());
         }
 
-
+        if (additionalProperties().containsKey(CodegenConstants.SHOULD_PREFIX_PACKAGES_TO_IMPORTS)) {
+            setShouldPrefixPackageToImports(convertPropertyToBooleanAndWriteBack(CodegenConstants.SHOULD_PREFIX_PACKAGES_TO_IMPORTS));
+        }
     }
 
     @Override
@@ -472,6 +475,7 @@ public abstract class AbstractCSharpCodegen extends DefaultCodegen implements Co
         postProcessEnumRefs(processed);
         updateValueTypeProperty(processed);
         updateNullableTypeProperty(processed);
+        sortVarsBasedOnRequirement(processed);
         return processed;
     }
 
@@ -692,6 +696,38 @@ public abstract class AbstractCSharpCodegen extends DefaultCodegen implements Co
         }
     }
 
+    protected void sortVarsBasedOnRequirement(Map<String, ModelsMap> models) {
+        for(ModelsMap maps : models.values()) {
+            for(ModelMap map : maps.getModels()) {
+                map.getModel().getAllVars().sort((o1, o2) -> {
+                    if (o1.required && o2.required)
+                        return 0;
+
+                    if (o1.required)
+                        return -1;
+
+                    if (o2.required)
+                        return 1;
+
+                    return 0;
+                });
+
+                map.getModel().getVars().sort((o1, o2) -> {
+                    if (o1.required && o2.required)
+                        return 0;
+
+                    if (o1.required)
+                        return -1;
+
+                    if (o2.required)
+                        return 1;
+
+                    return 0;
+                });
+            }
+        }
+    }
+
     @Override
     public OperationsMap postProcessOperationsWithModels(OperationsMap objs, List<ModelMap> allModels) {
         super.postProcessOperationsWithModels(objs, allModels);
@@ -830,18 +866,18 @@ public abstract class AbstractCSharpCodegen extends DefaultCodegen implements Co
 
     @Override
     public String apiFileFolder() {
-        return outputFolder + File.separator + sourceFolder + File.separator + packageName + File.separator + apiPackage();
+        return outputFolder + File.separator + sourceFolder + File.separator + packageName + File.separator + apiPackage().replace(".", File.separator);
     }
 
     @Override
     public String modelFileFolder() {
-        return outputFolder + File.separator + sourceFolder + File.separator + packageName + File.separator + modelPackage();
+        return outputFolder + File.separator + sourceFolder + File.separator + packageName + File.separator + modelPackage().replace(".", File.separator);
     }
 
     @Override
     public String toModelFilename(String name) {
         // should be the same as the model name
-        return toModelName(name);
+        return toModelName(name).replace(".", File.separator);
     }
 
     @Override
@@ -1084,7 +1120,12 @@ public abstract class AbstractCSharpCodegen extends DefaultCodegen implements Co
     @Override
     public String toClassName(final String name)
     {
-        return super.toClassName(name);
+        if (!isExtractPackagesFromModelName()) {
+            return super.toClassName(name);
+        }
+
+        final String[] components = name.split("\\.");
+        return components[components.length - 1];
     }
 
     @Override
@@ -1094,7 +1135,6 @@ public abstract class AbstractCSharpCodegen extends DefaultCodegen implements Co
         if (importMapping.containsKey(name)) {
             return importMapping.get(name);
         }
-
         // memoization and lookup in the cache
         String origName = name;
         if (schemaKeyToModelNameCache.containsKey(origName)) {
@@ -1109,20 +1149,22 @@ public abstract class AbstractCSharpCodegen extends DefaultCodegen implements Co
             name = name + "_" + modelNameSuffix;
         }
 
+        if (name.startsWith(this.strippedModelNamePrefix)) {
+            name = name.substring(this.strippedModelNamePrefix.length());
+        }
+
         //We can not really sanitize the dots away here when we want to extract them. So we sanitize the sections.
-        if (!isExtractPackagesFromModelName()) {
+        if (isExtractPackagesFromModelName()) {
             final String[] components = name.split("\\.");
             final String[] sanitizedComponents = new String[components.length];
             for (int i = 0; i < components.length; i++) {
-                sanitizedComponents[i] = sanitizeName(components[i]);
+                sanitizedComponents[i] = camelize(sanitizeName(components[i]));
             }
             name = String.join(".", sanitizedComponents);
         }
         else {
-            name = sanitizeName(name);
+            name = camelize(sanitizeName(name));
         }
-
-        name = camelize(name);
 
         // model name cannot use reserved keyword, e.g. return
         if (isReservedWord(name)) {
@@ -1515,6 +1557,50 @@ public abstract class AbstractCSharpCodegen extends DefaultCodegen implements Co
         this.strippedModelNamePrefix = strippedModelNamePrefix;
     }
 
+    public boolean isShouldPrefixPackageToImports() {
+        return shouldPrefixPackageToImports;
+    }
+
+    public void setShouldPrefixPackageToImports(boolean shouldPrefixPackageToImports) {
+        this.shouldPrefixPackageToImports = shouldPrefixPackageToImports;
+    }
+
+    @Override
+    public String modelPackage(String name) {
+        if (name.startsWith(this.strippedModelNamePrefix)) {
+            name = name.substring(this.strippedModelNamePrefix.length());
+        }
+
+        if (!isExtractPackagesFromModelName()) {
+            return super.modelPackage(name);
+        }
+
+        final String[] components = name.split("\\.");
+        final String superPackage = super.modelPackage(name);
+        final StringBuilder builder = new StringBuilder();
+
+        if (!superPackage.equals("")) {
+            builder.append(superPackage).append(".");
+        }
+
+        for (int i = 0; i < components.length - 1; i++) {
+            builder.append(components[i]);
+            if (i != components.length -2) {
+                builder.append(".");
+            }
+        }
+
+        return builder.toString();
+    }
+
+    @Override
+    public String toModelImport(String className, String modelName) {
+        if (isExtractPackagesFromModelName())
+            return toModelImport(modelName);
+
+        return super.toModelImport(className, modelName);
+    }
+
     @Override
     public String toModelImport(String name)
     {
@@ -1523,5 +1609,35 @@ public abstract class AbstractCSharpCodegen extends DefaultCodegen implements Co
         }
 
         return super.toModelImport(name);
+    }
+
+    @Override
+    protected void addImport(Set<String> importsToBeAddedTo, String type) {
+        if (!isShouldPrefixPackageToImports()) {
+            super.addImport(importsToBeAddedTo, type);
+            return;
+        }
+
+        if (shouldAddImport(type)) {
+            final String importName = toModelImport(type);
+            importsToBeAddedTo.add(importName);
+        }
+    }
+
+    @Override
+    public Map<String, String> toModelImportMap(String name) {
+        final String[] components = name.split("\\.");
+        final StringBuilder builder = new StringBuilder();
+
+        for (int i = 0; i < components.length - 1; i++) {
+            builder.append(components[i]);
+            if (i != components.length -2) {
+                builder.append(".");
+            }
+        }
+
+        final String importNamespace = builder.toString();
+
+        return Collections.singletonMap(importNamespace, name);
     }
 }

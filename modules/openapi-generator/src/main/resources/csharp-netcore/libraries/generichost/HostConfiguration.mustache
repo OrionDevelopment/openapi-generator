@@ -10,8 +10,12 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Net.Http;
 using Microsoft.Extensions.DependencyInjection;
-using {{packageName}}.Api;
-using {{packageName}}.Model;
+{{#hasImport}}
+using {{packageName}}.{{modelPackage}};
+{{/hasImport}}
+{{#imports}}
+using {{import}};
+{{/imports}}
 
 namespace {{packageName}}.Client
 {

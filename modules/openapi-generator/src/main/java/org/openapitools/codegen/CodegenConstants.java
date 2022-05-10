@@ -404,4 +404,7 @@ public class CodegenConstants {
 
     public static final String STRIPPED_MODEL_NAME_PREFIX = "strippedModelNamePrefix";
     public static final String STRIPPED_MODEL_NAME_PREFIX_DESC = "Prefix to strip from model names.";
+
+    public static final String SHOULD_PREFIX_PACKAGES_TO_IMPORTS = "shouldPrefixPackagesToImports";
+    public static final String SHOULD_PREFIX_PACKAGES_TO_IMPORTS_DESC = "Indicates if root packages should be prepended to imports";
 }
