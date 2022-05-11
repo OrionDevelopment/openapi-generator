@@ -12,12 +12,12 @@ using Microsoft.Extensions.Logging;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text.Json;
-using {{packageName}}.Client;
 {{#hasImport}}
 using {{packageName}}.{{modelPackage}};
 {{/hasImport}}
+using {{packageName}}.{{clientPackage}};
 {{#imports}}
-using {{packageName}}.{{import}};
+using {{import}};
 {{/imports}}
 
 namespace {{packageName}}.{{apiPackage}}

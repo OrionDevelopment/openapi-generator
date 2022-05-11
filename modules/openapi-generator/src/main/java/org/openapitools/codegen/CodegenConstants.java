@@ -407,4 +407,7 @@ public class CodegenConstants {
 
     public static final String SHOULD_PREFIX_PACKAGES_TO_IMPORTS = "shouldPrefixPackagesToImports";
     public static final String SHOULD_PREFIX_PACKAGES_TO_IMPORTS_DESC = "Indicates if root packages should be prepended to imports";
+
+    public static final String CLIENT_PACKAGE = "clientPackage";
+    public static final String CLIENT_PACKAGE_DESC = "The package to use for generated client classes.";
 }

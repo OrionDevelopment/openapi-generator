@@ -27,6 +27,7 @@ import org.openapitools.codegen.*;
 import org.openapitools.codegen.meta.features.*;
 import org.openapitools.codegen.model.ModelMap;
 import org.openapitools.codegen.model.ModelsMap;
+import org.openapitools.codegen.model.OperationsMap;
 import org.openapitools.codegen.utils.ModelUtils;
 import org.openapitools.codegen.utils.ProcessUtils;
 import org.slf4j.Logger;
@@ -349,6 +350,23 @@ public class CSharpNetCoreClientCodegen extends AbstractCSharpCodegen {
                 CodegenConstants.EXTRACT_PACKAGES_FROM_MODEL_NAMES,
                 CodegenConstants.EXTRACT_PACKAGES_FROM_MODEL_NAMES_DESC,
                 this.shouldPrefixPackageToImports
+        );
+
+        // Custom packages
+        addOption(
+          CodegenConstants.MODEL_PACKAGE,
+          CodegenConstants.MODEL_PACKAGE_DESC,
+          this.modelPackage
+        );
+        addOption(
+          CodegenConstants.API_PACKAGE,
+          CodegenConstants.API_PACKAGE_DESC,
+          this.apiPackage
+        );
+        addOption(
+          CodegenConstants.CLIENT_PACKAGE,
+          CodegenConstants.CLIENT_PACKAGE_DESC,
+          this.clientPackage
         );
     }
 
@@ -685,14 +703,24 @@ public class CSharpNetCoreClientCodegen extends AbstractCSharpCodegen {
             additionalProperties.put(CodegenConstants.MODEL_PACKAGE, modelPackage);
         }
 
+        if (!additionalProperties.containsKey(CodegenConstants.CLIENT_PACKAGE)) {
+            clientPackage = packageName + ".Client";
+            additionalProperties.put(CodegenConstants.CLIENT_PACKAGE, modelPackage);
+        }
+        else {
+            clientPackage = additionalProperties.get(CodegenConstants.CLIENT_PACKAGE).toString();
+        }
+
         if (isEmpty(apiPackage)) {
             setApiPackage("Api");
         }
         if (isEmpty(modelPackage)) {
             setModelPackage("Model");
         }
+        if (isEmpty(clientPackage)) {
+            clientPackage = "Client";
+        }
 
-        clientPackage = "Client";
 
         if (GENERICHOST.equals(getLibrary())) {
             setLibrary(GENERICHOST);
@@ -1548,5 +1576,26 @@ public class CSharpNetCoreClientCodegen extends AbstractCSharpCodegen {
         }
         // process 'additionalProperties'
         setAddProps(schema, m);
+    }
+
+    @Override
+    public Map<String, Object> postProcessSupportingFileData(final Map<String, Object> objs)
+    {
+        final Map<String, Object> data = super.postProcessSupportingFileData(objs);
+
+        data.put("clientPackage", clientPackage);
+
+        return data;
+    }
+
+    @Override
+    public OperationsMap postProcessOperationsWithModels(
+      final OperationsMap objs, final List<ModelMap> allModels)
+    {
+        final OperationsMap map = super.postProcessOperationsWithModels(objs, allModels);
+
+        map.put("clientPackage", clientPackage);
+
+        return map;
     }
 }

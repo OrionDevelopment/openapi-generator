@@ -6498,7 +6498,7 @@ public class DefaultCodegen implements CodegenConfig {
             codegenParameter.dataType = getTypeDeclaration(codegenModel.classname);
             codegenParameter.description = codegenModel.description;
             codegenParameter.isNullable = codegenModel.isNullable;
-            addImport(imports, codegenModel.name);
+            addImport(imports, toModelName(codegenModel.name));
         } else {
             CodegenProperty codegenProperty = fromProperty("property", schema);
 

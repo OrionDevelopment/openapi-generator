@@ -877,7 +877,7 @@ public abstract class AbstractCSharpCodegen extends DefaultCodegen implements Co
     @Override
     public String toModelFilename(String name) {
         // should be the same as the model name
-        return toModelName(name).replace(".", File.separator);
+        return toModelName(name).replace(".", File.separator).substring(modelPackage.length() + 1);
     }
 
     @Override
@@ -1156,9 +1156,10 @@ public abstract class AbstractCSharpCodegen extends DefaultCodegen implements Co
         //We can not really sanitize the dots away here when we want to extract them. So we sanitize the sections.
         if (isExtractPackagesFromModelName()) {
             final String[] components = name.split("\\.");
-            final String[] sanitizedComponents = new String[components.length];
+            final String[] sanitizedComponents = new String[components.length + 1];
+            sanitizedComponents[0] = modelPackage();
             for (int i = 0; i < components.length; i++) {
-                sanitizedComponents[i] = camelize(sanitizeName(components[i]));
+                sanitizedComponents[i + 1] = camelize(sanitizeName(components[i]));
             }
             name = String.join(".", sanitizedComponents);
         }
@@ -1608,7 +1609,7 @@ public abstract class AbstractCSharpCodegen extends DefaultCodegen implements Co
             name = name.substring(this.strippedModelNamePrefix.length());
         }
 
-        return super.toModelImport(name);
+        return String.join(".", new String[] {packageName, name});
     }
 
     @Override

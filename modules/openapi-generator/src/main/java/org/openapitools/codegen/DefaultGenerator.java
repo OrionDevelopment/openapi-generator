@@ -804,7 +804,12 @@ public class DefaultGenerator implements Generator {
 
         final Set<String> importSchemaNames = new HashSet<>();
         for (ModelMap allModel : allModels) {
-            importSchemaNames.add(allModel.getModel().name);
+            importSchemaNames.add(
+              config.toModelImport(
+                allModel.getModel().classname,
+                config.toModelName(allModel.getModel().getName())
+              )
+            );
         }
         final Map<String, String> importMappings = getAllImportsMappings(importSchemaNames);
         final Set<Map<String, String>> importsObject = toImportsObjects(importMappings);

@@ -10,6 +10,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Net.Http;
 using Microsoft.Extensions.DependencyInjection;
+using {{packageName}}.{{apiPackage}};
 {{#hasImport}}
 using {{packageName}}.{{modelPackage}};
 {{/hasImport}}
@@ -17,7 +18,7 @@ using {{packageName}}.{{modelPackage}};
 using {{import}};
 {{/imports}}
 
-namespace {{packageName}}.Client
+namespace {{packageName}}.{{clientPackage}}
 {
     /// <summary>
     /// Provides hosting configuration for {{packageName}}
